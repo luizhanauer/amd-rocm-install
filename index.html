@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama + AMD ROCm Installer</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --surface-color: rgba(26, 26, 26, 0.9); /* Ligeiramente transparente para o fundo aparecer */
+            --primary-color: #e50914;
+            --primary-hover: #b20710;
+            --text-color: #f5f5f5;
+            --text-muted: #a0a0a0;
+            --code-bg: #000000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden; /* Evita barra de rolagem horizontal com a animação */
+        }
+
+        /* Estilos para o Canvas de Fundo */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Coloca o canvas atrás de todo o conteúdo */
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem auto;
+            padding: 3rem;
+            background-color: var(--surface-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); /* Sombra mais forte para destacar */
+            position: relative; /* Garante que o conteúdo fique sobre o canvas */
+            backdrop-filter: blur(5px); /* Efeito de desfoque sutil no fundo atrás do container */
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 2.5rem;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 span {
+            color: var(--primary-color);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            margin-bottom: 2rem;
+            padding-left: 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .features li {
+            margin-bottom: 0.5rem;
+        }
+
+        .features strong {
+            color: var(--text-color);
+        }
+
+        .install-box {
+            background-color: var(--code-bg);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .install-box code {
+            font-family: "Fira Code", "Courier New", Courier, monospace;
+            font-size: 1.1rem;
+            color: #50fa7b;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            align-self: flex-start;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.98); /* Efeito de clique */
+        }
+
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid #333;
+            padding-top: 1rem;
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="container">
+        <h1>Ollama <span>+</span> AMD ROCm</h1>
+        <p class="subtitle">Instalação otimizada para GPUs AMD RDNA 2 (RX 6600 XT) no Ubuntu 24.04 (Noble).</p>
+
+        <ul class="features">
+            <li><strong>Automático:</strong> Baixa os drivers oficiais da AMD (repo.radeon.com) de forma dinâmica.</li>
+            <li><strong>Isolado:</strong> Instala apenas a stack <code>rocm</code> necessária para computação (sem dkms desnecessários).</li>
+            <li><strong>Persistente:</strong> Aplica o override no Systemd (<code>HSA_OVERRIDE_GFX_VERSION</code>) para evitar crash do runner.</li>
+        </ul>
+
+        <div class="install-box">
+            <code id="install-command">curl -fsSL https://luizhanauer.github.io/amd-rocm-install/get.sh | sudo bash</code>
+            <button class="copy-btn" id="copyBtn" onclick="copyCommand()">Copiar Comando</button>
+        </div>
+
+        <div class="footer">
+            Criado por <a href="https://github.com/luizhanauer" target="_blank">Luiz Hanauer</a>. 
+            Consulte o <a href="https://github.com/luizhanauer/amd-rocm-install" target="_blank">código-fonte no GitHub</a>.
+        </div>
+    </div>
+
+    <script>
+        // Função para copiar o comando
+        function copyCommand() {
+            const commandText = document.getElementById('install-command').innerText;
+            navigator.clipboard.writeText(commandText).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerText;
+                btn.innerText = 'Copiado!';
+                btn.style.backgroundColor = '#50fa7b';
+                btn.style.color = '#000';
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.backgroundColor = 'var(--primary-color)';
+                    btn.style.color = 'white';
+                }, 2000);
+            }).catch(err => {
+                console.error('Falha ao copiar texto: ', err);
+            });
+        }
+
+        // --- Script para o Fundo Poligonal Animado ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, polygons;
+
+        // Configurações da animação
+        const config = {
+            polygonCount: 30, // Número de polígonos
+            baseSize: 50,       // Tamanho base dos polígonos
+            sizeVariation: 30, // Variação de tamanho
+            baseSpeed: 0.2,     // Velocidade base de movimento
+            color: 'rgba(229, 9, 20, 0.08)' // Vermelho primário com opacidade bem baixa
+        };
+
+        // Função para redimensionar o canvas
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initPolygons(); // Reinicia os polígonos no novo tamanho
+        }
+
+        // Classe para representar um polígono
+        class Polygon {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.size = config.baseSize + Math.random() * config.sizeVariation;
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * config.baseSpeed;
+                this.vy = (Math.random() - 0.5) * config.baseSpeed;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.005;
+                this.sides = Math.floor(Math.random() * 3) + 3; // Entre 3 e 5 lados
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+
+                // Reposiciona se sair da tela (efeito wrap-around)
+                if (this.x < -this.size) this.x = width + this.size;
+                if (this.x > width + this.size) this.x = -this.size;
+                if (this.y < -this.size) this.y = height + this.size;
+                if (this.y > height + this.size) this.y = -this.size;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.beginPath();
+                const angleStep = (Math.PI * 2) / this.sides;
+                ctx.moveTo(this.size, 0);
+                for (let i = 1; i < this.sides; i++) {
+                    ctx.lineTo(
+                        this.size * Math.cos(angleStep * i),
+                        this.size * Math.sin(angleStep * i)
+                    );
+                }
+                ctx.closePath();
+                ctx.fillStyle = config.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Inicializa o array de polígonos
+        function initPolygons() {
+            polygons = [];
+            for (let i = 0; i < config.polygonCount; i++) {
+                polygons.push(new Polygon());
+            }
+        }
+
+        // Função principal de animação
+        function animate() {
+            ctx.clearRect(0, 0, width, height); // Limpa o canvas a cada frame
+            polygons.forEach(polygon => {
+                polygon.update();
+                polygon.draw();
+            });
+            requestAnimationFrame(animate); // Solicita o próximo frame
+        }
+
+        // Eventos e Inicialização
+        window.addEventListener('resize', resize);
+        resize(); // Configura tamanho inicial e polígonos
+        requestAnimationFrame(animate); // Inicia a animação
+
+    </script>
+</body>
+</html>
