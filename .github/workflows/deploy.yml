@@ -27,8 +27,8 @@ jobs:
 
       - name: Inject Portfolio Screenshots
         run: |
-          mkdir -p dist/assets
-          cp -r portfolio-assets/* dist/assets/ || true
+          mkdir -p assets
+          cp -r portfolio-assets/* assets/ || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
