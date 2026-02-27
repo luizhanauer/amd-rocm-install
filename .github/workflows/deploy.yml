@@ -25,6 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject Portfolio Screenshots
+        run: |
+          mkdir -p dist/assets
+          cp -r portfolio-assets/* dist/assets/ || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
